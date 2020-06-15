@@ -1,0 +1,4 @@
+*.py[cod]
+
+oldmodels/
+mujoco_panda/utils
