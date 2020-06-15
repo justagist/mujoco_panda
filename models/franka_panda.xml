@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<mujoco model="mujoco_panda_model">
+
+    <include file="other/simple_scene.xml"/>
+    <include file="panda/assets.xml"/>
+    <compiler meshdir=""/>
+
+    <option>
+        <flag gravity="disable"/>
+    </option>
+
+    <worldbody>
+        <include file="panda/arm_with_gripper.xml"/>
+    </worldbody>
+    
+    <actuator>
+        <include file="panda/actuators/torque_with_gripper.xml"/>
+    </actuator>
+
+</mujoco>

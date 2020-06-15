@@ -1,0 +1,44 @@
+<mujoco>
+
+    <compiler angle="radian"/>
+
+    <asset>
+        <mesh name="link0_collision" file="meshes/collision/link0.stl"/>
+        <mesh name="link1_collision" file="meshes/collision/link1.stl"/>
+        <mesh name="link2_collision" file="meshes/collision/link2.stl"/>
+        <mesh name="link3_collision" file="meshes/collision/link3.stl"/>
+        <mesh name="link4_collision" file="meshes/collision/link4.stl"/>
+        <mesh name="link5_collision" file="meshes/collision/link5.stl"/>
+        <mesh name="link6_collision" file="meshes/collision/link6.stl"/>
+        <mesh name="link7_collision" file="meshes/collision/link7.stl"/>
+        <mesh name="hand_collision" file="meshes/collision/hand.stl"/>
+        <mesh name="finger_collision" file="meshes/collision/finger.stl" scale='1.75 1.0 1.75'/>
+        <mesh name="link0_visual" file="meshes/visual/link0.stl"/>
+        <mesh name="link1_visual" file="meshes/visual/link1.stl"/>
+        <mesh name="link2_visual" file="meshes/visual/link2.stl"/>
+        <mesh name="link3_visual" file="meshes/visual/link3.stl"/>
+        <mesh name="link4_visual" file="meshes/visual/link4.stl"/>
+        <mesh name="link5_visual" file="meshes/visual/link5.stl"/>
+        <mesh name="link6_visual" file="meshes/visual/link6.stl"/>
+        <mesh name="link7_visual" file="meshes/visual/link7.stl"/>
+        <mesh name="hand_visual" file="meshes/visual/hand.stl"/>
+        <mesh name="finger_visual" file="meshes/collision/finger.stl" scale='1.75 1.0 1.75'/>
+    </asset>
+
+    <default>
+        <default class="panda">
+            <joint pos="0 0 0" axis="0 0 1" limited="true" damping="100"/>
+            <position forcelimited="true" ctrllimited="true" user="1002 40 2001 -0.005 0.005"/>
+            <default class="visual">
+                <geom contype="0" conaffinity="0" group="0" type="mesh" rgba=".95 .99 .92 1" mass="0"/>
+            </default>
+
+            <default class="collision">
+                <geom contype="1" conaffinity="1" group="3" type="mesh" rgba=".5 .6 .7 1"/>
+            </default>
+             <default class="panda_finger">
+                <joint damping="100" armature='5'/>
+            </default>
+        </default>
+    </default>
+</mujoco>

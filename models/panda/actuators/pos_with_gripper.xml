@@ -1,0 +1,11 @@
+<mujoco>
+    <position name="panda_pos_actuator1" joint="panda_joint1" class="panda" kp="870" forcerange="-87 87" ctrlrange="-2.8973 2.8973"/> 
+    <position name="panda_pos_actuator2" joint="panda_joint2" class="panda" kp="870" forcerange="-87 87" ctrlrange="-1.7628 1.7628"/> 
+    <position name="panda_pos_actuator3" joint="panda_joint3" class="panda" kp="870" forcerange="-87 87" ctrlrange="-2.8973 2.8973"/> 
+    <position name="panda_pos_actuator4" joint="panda_joint4" class="panda" kp="870" forcerange="-87 87" ctrlrange="-3.0718 -0.0698"/> 
+    <position name="panda_pos_actuator5" joint="panda_joint5" class="panda" kp="120" forcerange="-12 12" ctrlrange="-2.8973 2.8973"/> 
+    <position name="panda_pos_actuator6" joint="panda_joint6" class="panda" kp="120" forcerange="-12 12" ctrlrange="-0.0175 3.7525"/> 
+    <position name="panda_pos_actuator7" joint="panda_joint7" class="panda" kp="120" forcerange="-12 12" ctrlrange="-2.8973 2.8973"/> 
+    <position name="r_gripper_finger_pos_actuator" joint="panda_finger_joint1" class="panda_finger" kp="500" forcerange="-70 70" ctrlrange="0 0.04"/>
+    <position name="l_gripper_finger_pos_actuator" joint="panda_finger_joint2" class="panda_finger" kp="500" forcerange="-70 70" ctrlrange="0 0.04"/>
+</mujoco>

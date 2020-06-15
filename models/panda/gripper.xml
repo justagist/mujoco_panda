@@ -1,0 +1,19 @@
+<mujoco>
+<body name="hand" pos="0 0 0.107" euler="0 0 -0.785">
+    <inertial pos="0 0 0" euler="0 0 0" mass="0.68" diaginertia="0.1 0.1 0.1" />
+    <geom class="visual" mesh="hand_visual"/>
+    <geom class="collision" mesh="hand_collision"/>
+
+    <body name="panda_leftfinger" pos="0 0 0.0584" quat="1 0 0 0">
+        <joint name="panda_finger_joint1"  axis="0 1 0" type="slide" range="0 0.04" damping="100" armature='5'/>
+        <geom class="visual" mesh="finger_visual"/>
+        <geom class="collision" mesh="finger_collision" mass="0.01"/>
+    </body>
+
+    <body name="panda_rightfinger" pos="0 0 0.0584" quat="1 0 0 0">
+        <joint name="panda_finger_joint2" axis="0 -1 0" type="slide" range="0 0.04" damping="100" armature='5'/>
+        <geom quat="0 0 0 1" class="visual" mesh="finger_visual"/>
+        <geom quat="0 0 0 1" class="collision" mesh="finger_collision" mass="0.01"/>
+    </body>
+</body>
+</mujoco>
