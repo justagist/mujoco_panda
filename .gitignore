@@ -2,3 +2,5 @@
 
 oldmodels/
 mujoco_panda/utils
+
+MUJOCO_LOG.TXT

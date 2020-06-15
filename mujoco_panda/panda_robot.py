@@ -7,5 +7,5 @@ class PandaArm(MujocoRobot):
 
     def __init__(self, model_path=MODEL_PATH, render=True):
 
-        super().__init__(model_path, render=True)
+        super().__init__(model_path, render=render)
         
