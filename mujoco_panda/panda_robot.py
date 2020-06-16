@@ -9,9 +9,14 @@ class PandaArm(MujocoRobot):
 
         super().__init__(model_path, render=render)
 
-        self._has_gripper = self.has_body(['hand','panda_leftfinger','panda_rightfinger'])
+        self._has_gripper = self.has_body(['panda_hand','panda_leftfinger','panda_rightfinger'])
 
         self._logger.info("PandaArm: Robot instance initialised with{} gripper".format("out" if not self._has_gripper else ""))
+
+        if self._has_gripper:
+            self.set_as_ee("ee_site")
+        else:
+            self.set_as_ee("ee_site")
 
         self._group_actuator_joints()
 
@@ -58,5 +63,16 @@ class PandaArm(MujocoRobot):
                     self.unactuated_gripper_joint_names.append(jnt)
             
             self._logger.debug("Movable gripper joints: {}".format(str(self.actuated_gripper_joint_names)))
+
+    def jacobian(self, body_id=None):
+        """
+        Return body jacobian of end-effector based on the arm joints
+
+        :param body_id: index of end-effector to be used, defaults to "panda_hand" or "panda_link7"
+        :type body_id: int, optional
+        :return: 6x7 body jacobian
+        :rtype: np.ndarray
+        """
+        return self.body_jacobian(body_id=body_id, joint_indices=self.actuated_arm_joints)
 
         
