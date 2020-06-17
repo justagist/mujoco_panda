@@ -6,15 +6,19 @@
     <compiler meshdir=""/>
 
     <option>
-        <flag gravity="disable"/>
+        <flag gravity="enable"/>
     </option>
 
     <worldbody>
         <include file="panda/arm_with_gripper.xml"/>
     </worldbody>
-    
+
     <actuator>
         <include file="panda/actuators/torque_with_gripper.xml"/>
     </actuator>
+
+    <sensor>
+        <include file="panda/sensors/ft_sensor.xml" />
+    </sensor>
 
 </mujoco>

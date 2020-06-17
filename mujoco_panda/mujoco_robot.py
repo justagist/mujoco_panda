@@ -7,11 +7,11 @@ import quaternion
 from threading import Lock
 
 LOG_LEVEL = "DEBUG"
-logging.basicConfig(format='\n%(levelname)s: %(message)s\n', level=LOG_LEVEL)
+
 
 class MujocoRobot(object):
 
-    def __init__(self, model_path, render = True, config = None, gravity_compensation = True):
+    def __init__(self, model_path, render=True, config=None):
         """
         Constructor
 
@@ -24,22 +24,21 @@ class MujocoRobot(object):
         self._sim = mjp.MjSim(self._model)
         self._viewer = mjp.MjViewer(self._sim) if render else None
 
-        self._has_gripper = False # by default, assume no gripper is attached
+        self._has_gripper = False  # by default, assume no gripper is attached
 
-        self._movable_joints = self.get_movable_joints()
+        self._controllable_joints = self.get_controllable_joints()
 
-        self._nu = len(self._movable_joints)
+        self._nu = len(self._controllable_joints)
 
         self._all_joints = range(self._model.nv)
 
         self._nq = len(self._all_joints)
 
-        self._all_joint_names = [self.model.joint_id2name(j) for j in self._all_joints]
+        self._all_joint_names = [
+            self.model.joint_id2name(j) for j in self._all_joints]
 
-        self._all_joint_dict = dict(zip(self._all_joint_names, self._all_joints))
-
-        self._enable_gravity_compensation = gravity_compensation
-        self._additional_force = np.zeros(self._nq)
+        self._all_joint_dict = dict(
+            zip(self._all_joint_names, self._all_joints))
 
         if config is not None and config['ee_name'] is not None:
             self.set_as_ee(config['ee_name'])
@@ -50,8 +49,10 @@ class MujocoRobot(object):
         self._mutex = Lock()
         self._asynch_thread_active = False
 
+        logging.basicConfig(format='\n{}: %(levelname)s: %(message)s\n'.format(self.__class__.__name__), level=LOG_LEVEL)
         self._logger = logging.getLogger(__name__)
-        self._logger.setLevel(LOG_LEVEL)
+
+        self._forwarded = False
 
     def set_as_ee(self, body_name):
         self._ee_name = body_name
@@ -59,7 +60,8 @@ class MujocoRobot(object):
         if body_name in self._model.site_names:
             self._ee_is_a_site = True
             self._ee_idx = self._model.site_name2id("ee_site")
-            self._logger.debug("End-effector is a site in model: {}".format(body_name))
+            self._logger.debug(
+                "End-effector is a site in model: {}".format(body_name))
         else:
             self._ee_is_a_site = False
             self._ee_idx = self._model.body_name2id(self._ee_name)
@@ -74,7 +76,7 @@ class MujocoRobot(object):
     @property
     def viewer(self):
         return self._viewer
-    
+
     @property
     def model(self):
         return self._model
@@ -95,7 +97,7 @@ class MujocoRobot(object):
                 return False
         return True
 
-    def body_jacobian(self, body_id = None, joint_indices = None):
+    def body_jacobian(self, body_id=None, joint_indices=None, recompute = True):
         """
         return body jacobian at current step
 
@@ -110,17 +112,20 @@ class MujocoRobot(object):
         if body_id is None:
             body_id = self._ee_idx
             if self._ee_is_a_site:
-                return self.site_jacobian(body_id,joint_indices)
+                return self.site_jacobian(body_id, joint_indices)
 
         if joint_indices is None:
-            joint_indices = self._movable_joints
-        
-        jacp = self._sim.data.body_jacp[body_id,:].reshape(3,-1)
-        jacr = self._sim.data.body_jacr[body_id,:].reshape(3,-1)
+            joint_indices = self._controllable_joints
 
-        return np.vstack([jacp[:,joint_indices],jacr[:,joint_indices]])
+        if recompute and not self._forwarded:
+            self.forward_sim()
 
-    def site_jacobian(self, site_id, joint_indices = None):
+        jacp = self._sim.data.body_jacp[body_id, :].reshape(3, -1)
+        jacr = self._sim.data.body_jacr[body_id, :].reshape(3, -1)
+
+        return np.vstack([jacp[:, joint_indices], jacr[:, joint_indices]])
+
+    def site_jacobian(self, site_id, joint_indices=None, recompute = True):
         """
         Return jacobian computed for a site defined in model
 
@@ -133,11 +138,14 @@ class MujocoRobot(object):
         :rtype: np.ndarray
         """
         if joint_indices is None:
-            joint_indices = self._movable_joints
-        jacp = self._sim.data.site_jacp[site_id,:].reshape(3,-1)
-        jacr = self._sim.data.site_jacr[site_id,:].reshape(3,-1)
-        return np.vstack([jacp[:,joint_indices],jacr[:,joint_indices]])
-
+            joint_indices = self._controllable_joints
+        
+        if recompute and not self._forwarded:
+            self.forward_sim()
+        
+        jacp = self._sim.data.site_jacp[site_id, :].reshape(3, -1)
+        jacr = self._sim.data.site_jacr[site_id, :].reshape(3, -1)
+        return np.vstack([jacp[:, joint_indices], jacr[:, joint_indices]])
 
     def ee_pose(self):
         """
@@ -149,24 +157,28 @@ class MujocoRobot(object):
         if self._ee_is_a_site:
             return self.site_pose(self._ee_idx)
         return self.body_pose(self._ee_idx)
-    
-    def body_pose(self, body_id):
+
+    def body_pose(self, body_id, recompute=True):
         """
         Return pose of specified body at current sim step
 
         :return: position (x,y,z), quaternion (w,x,y,z)
         :rtype: np.ndarray, np.ndarray
         """
-        return self._sim.data.body_xpos[body_id], self._sim.data.body_xquat[body_id]
+        if recompute and not self._forwarded:
+            self.forward_sim()
+        return self._sim.data.body_xpos[body_id].copy(), self._sim.data.body_xquat[body_id].copy()
 
-    def site_pose(self, site_id):
+    def site_pose(self, site_id, recompute=True):
         """
         Return pose of specified site at current sim step
 
         :return: position (x,y,z), quaternion (w,x,y,z)
         :rtype: np.ndarray, np.ndarray
         """
-        return self._sim.data.site_xpos[site_id], quaternion.from_rotation_matrix(self._sim.data.site_xmat[site_id].reshape(3,3))
+        if recompute and not self._forwarded:
+            self.forward_sim()
+        return self._sim.data.site_xpos[site_id].copy(), quaternion.from_rotation_matrix(self._sim.data.site_xmat[site_id].copy().reshape(3, 3))
 
     def ee_velocity(self):
         """
@@ -179,42 +191,47 @@ class MujocoRobot(object):
             return self.site_velocity(self._ee_idx)
         return self.body_velocity(self._ee_idx)
 
-    def body_velocity(self, body_id):
+    def body_velocity(self, body_id, recompute=True):
         """
         Return velocity of specified body at current sim step
 
         :return: linear velocity (x,y,z), angular velocity (x,y,z)
         :rtype: np.ndarray, np.ndarray
         """
-        return self._sim.data.body_xvelp[body_id], self._sim.data.body_xvelr[body_id]
+        if recompute and not self._forwarded:
+            self.forward_sim()
+        return self._sim.data.body_xvelp[body_id].copy(), self._sim.data.body_xvelr[body_id].copy()
 
-    def site_velocity(self, site_id):
+    def site_velocity(self, site_id, recompute=True):
         """
         Return velocity of specified site at current sim step
 
         :return: linear velocity (x,y,z), angular velocity (x,y,z)
         :rtype: np.ndarray, np.ndarray
         """
-        return self._sim.data.site_xvelp[site_id], self._sim.data.site_xvelr[site_id]
+        if recompute and not self._forwarded:
+            self.forward_sim()
+        return self._sim.data.site_xvelp[site_id].copy(), self._sim.data.site_xvelr[site_id].copy()
 
-    def get_movable_joints(self):
+    def get_controllable_joints(self):
         """
         Return list of movable (actuated) joints in the given model
 
         :return: list of indices of controllable joints
         :rtype: [int] (size: self._nu)
         """
-        trntype = self._model.actuator_trntype # transmission type (0 == joint)
-        trnid = self._model.actuator_trnid # transmission id (get joint actuated)
+        trntype = self._model.actuator_trntype  # transmission type (0 == joint)
+        # transmission id (get joint actuated)
+        trnid = self._model.actuator_trnid
 
         mvbl_jnts = []
         for i in range(trnid.shape[0]):
-            if trntype[i] == 0 and trnid[i,0] not in mvbl_jnts:
-                mvbl_jnts.append(trnid[i,0])
-        
+            if trntype[i] == 0 and trnid[i, 0] not in mvbl_jnts:
+                mvbl_jnts.append(trnid[i, 0])
+
         return sorted(mvbl_jnts)
 
-    def start_asynchronous_run(self, rate = 50):
+    def start_asynchronous_run(self, rate=50):
         """
         Start a separate thread running the step simulation 
         for the robot. Rendering still has to be called in the 
@@ -229,31 +246,37 @@ class MujocoRobot(object):
                 sleep_time = (1./rate) - elapsed
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
-        
-        self._asynch_sim_thread = threading.Thread(target = continuous_run)
+
+        self._asynch_sim_thread = threading.Thread(target=continuous_run)
         self._asynch_sim_thread.start()
 
     def stop_asynchronous_run(self):
         self._asynch_thread_active = False
         self._asynch_sim_thread.join()
 
-    def set_joint_positions(self, cmd, joints=None):
+    def set_actuator_ctrl(self, cmd, actuator_ids=None):
         """
-        Set target joint positions. Use for position controlling.
+        Set controller values. Each cmd should be an appropriate
+        value for the controller type of actuator specified.
 
-        @param cmd  : joint position values
+        @param cmd  : actuator ctrl values
         @type cmd   : [float] * self._nu
-
         """
         cmd = np.asarray(cmd).flatten()
-        joints = np.r_[:cmd.shape[0]] if joints is None else np.r_[joints]
+        actuator_ids = np.r_[:cmd.shape[0]] if actuator_ids is None else np.r_[actuator_ids]
 
-        assert cmd.shape[0] == joints.shape[0]
-        
-        self._sim.data.ctrl[joints] = cmd
+        assert cmd.shape[0] == actuator_ids.shape[0]
+
+        self._sim.data.ctrl[actuator_ids] = cmd
+
+    def hard_set_joint_positions(self, values, indices=None):
+        if indices is None:
+            indices = range(np.asarray(values).shape[0])
+
+        self._sim.data.qpos[indices] = values
 
     def __del__(self):
-        if hasattr(self,'_asynch_sim_thread') and self._asynch_sim_thread.isAlive():
+        if hasattr(self, '_asynch_sim_thread') and self._asynch_sim_thread.isAlive():
             self._asynch_thread_active = False
             self._asynch_sim_thread.join()
 
@@ -265,20 +288,19 @@ class MujocoRobot(object):
         :type render: bool, optional
         """
         self._mutex.acquire()
-        # pre-step computations and value assignments
-        if self._enable_gravity_compensation:
-            self._additional_force += self._sim.data.qfrc_bias
-            self._sim.data.qfrc_applied[:] = self._additional_force
-            
+
         self._sim.step()
 
-        # post-step changes
-        self._additional_force *= 0
-        
+        self._forwarded = False
+
         if render:
             self.render()
 
         self._mutex.release()
+
+    def forward_sim(self):
+        self._sim.forward()
+        self._forwarded = True
 
     def render(self):
         """

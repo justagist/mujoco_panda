@@ -24,9 +24,9 @@
         <mesh name="hand_visual" file="meshes/visual/hand.stl"/>
         <mesh name="finger_visual" file="meshes/collision/finger.stl" scale='1.75 1.0 1.75'/>
     </asset>
-
     <default>
         <default class="panda">
+            
             <joint pos="0 0 0" axis="0 0 1" limited="true" damping="100"/>
             <position forcelimited="true" ctrllimited="true" user="1002 40 2001 -0.005 0.005"/>
             <default class="visual">

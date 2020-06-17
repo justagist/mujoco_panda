@@ -1,5 +1,5 @@
 <mujoco>
-<body name="hand" pos="0 0 0.107" euler="0 0 -0.785">
+<body name="panda_hand" pos="0 0 0.107" euler="0 0 -0.785">
     <inertial pos="0 0 0" euler="0 0 0" mass="0.68" diaginertia="0.1 0.1 0.1" />
     <geom class="visual" mesh="hand_visual"/>
     <geom class="collision" mesh="hand_collision"/>

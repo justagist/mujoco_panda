@@ -1,6 +1,8 @@
 *.py[cod]
 
+__pycache__
+
 oldmodels/
-mujoco_panda/utils
+# mujoco_panda/utils
 
 MUJOCO_LOG.TXT
