@@ -6,7 +6,7 @@
     <compiler meshdir=""/>
 
     <option>
-        <flag gravity="enable"/>
+        <flag gravity="disable"/>
     </option>
 
     <worldbody>

@@ -20,7 +20,7 @@ class PandaArm(MujocoRobot):
         if self._compensate_gravity:
             grav_comp_model_path = grav_comp_model_path if grav_comp_model_path is not None else model_path
             self._grav_comp_robot = GravityRobot(grav_comp_model_path)
-                
+
             assert self._grav_comp_robot.model.nv == self._model.nv
 
             self.add_pre_step_callable({'grav_comp': [self._grav_compensator_handle, {}]})
@@ -172,8 +172,6 @@ class PandaArm(MujocoRobot):
 
         if joints is None:
             joints = self.actuated_arm_joint_names[:len(cmd)]
-
-        assert len(cmd) == len(joints)
 
         act_ids = self.get_actuator_ids(joints)
         cmd = np.asarray(cmd)

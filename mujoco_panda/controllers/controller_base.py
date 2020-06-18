@@ -8,7 +8,7 @@ LOG_LEVEL = "DEBUG"
 
 class ControllerBase(object):
 
-    def __init__(self, robot_object, config={}, run_step_always=True):
+    def __init__(self, robot_object, config={}):
 
         self._robot = robot_object
 
@@ -72,6 +72,11 @@ class ControllerBase(object):
                 if sleep_time_c > 0.0:
                     time.sleep(sleep_time_c)
 
-    def __del__(self):
+    def stop_controller_cleanly(self):
+
+        self._logger.info ("Stopping controller commands; removing ctrl values.")
+        self._robot.set_joint_commands(np.zeros_like(self._robot.actuated_arm_joints),self._robot.actuated_arm_joints)
+        self._robot._ignore_grav_comp=False
+        self._logger.info ("Stopping controller thread. WARNING: PandaArm->step() method has to be called separately to continue simulation.")
         self._is_running = False
         self._ctrl_thread.join()

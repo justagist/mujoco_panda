@@ -12,9 +12,9 @@ class OSHybridForceMotionController(ControllerBase):
               self).__init__(robot_object, config)
 
         self._goal_pos, self._goal_ori = self._robot.ee_pose()
-        self._goal_vel, self._goal_omg = np.zeros([3, 1]), np.zeros([3, 1])
+        self._goal_vel, self._goal_omg = np.zeros(3), np.zeros(3)
         self._goal_force, self._goal_torque = np.zeros(
-            [3, 1]), np.zeros([3, 1])
+            3), np.zeros(3)
 
         # gains for position
         self._kp_p = np.diag(self._config['kp_p'])
@@ -72,20 +72,27 @@ class OSHybridForceMotionController(ControllerBase):
 
         delta_vel = self._goal_vel - curr_vel
 
-        delta_force = self._goal_force - curr_force
+        delta_force = self._force_dir.dot(self._goal_force - curr_force)
 
         delta_torque = self._torque_dir.dot(self._goal_torque - curr_torque)
 
         # if np.linalg.norm(delta_pos) <= self._pos_threshold:
         #     delta_pos = np.zeros(delta_pos.shape)
         #     delta_vel = np.zeros(delta_pos.shape)
-
-        # print( "Delta force \t", self._goal_force)
+        # threshold = 0.01
+        # print("Delta force \t", delta_force)
 
         if self._goal_ori is not None:
             delta_ori = quatdiff_in_euler(curr_ori, self._goal_ori)
         else:
             delta_ori = np.zeros(delta_pos.shape)
+
+        tot_error = np.linalg.norm(
+            delta_pos) + np.linalg.norm(delta_ori) + np.linalg.norm(delta_force) + np.linalg.norm(delta_torque)
+        
+        # if tot_error <= threshold:
+        #     return self._cmd
+        # print (tot_error)
 
         delta_ori = self._pos_o_dir.dot(delta_ori)
 
@@ -147,7 +154,7 @@ class OSHybridForceMotionController(ControllerBase):
 
             self._cmd = self._cmd + \
                 null_space_filter.dot(
-                    self._robot._neutral_pose-self._robot.joint_positions())
+                    self._robot._neutral_pose-self._robot.joint_positions()[:7])
 
         # Never forget to update the error
         self._error = {'linear': delta_pos, 'angular': delta_ori}
