@@ -52,8 +52,10 @@ class KBHit:
         dr,dw,de = select([sys.stdin], [], [], 0)
         return dr != []
 
+    def __del__(self):
+        self.set_normal_term()
 
-# Test    
+
 if __name__ == "__main__":
 
     kb = KBHit()
@@ -63,8 +65,10 @@ if __name__ == "__main__":
     while True:
         if kb.kbhit():
             c = kb.getch()
-            if ord(c) == 27: # ESC
+            if ord(c) == 27:  # ESC
                 break
-            print(ord(c))
+            print(ord(c), c, chr(ord(c)))
+        # else:
+        #     print("Nothing")
 
-    kb.set_normal_term()
+    # kb.set_normal_term()

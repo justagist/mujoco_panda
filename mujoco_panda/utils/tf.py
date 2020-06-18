@@ -1,6 +1,7 @@
 import mujoco_py
 import numpy as np
 from scipy.spatial.transform import Rotation as R
+import quaternion
 
 def euler2quat(euler, degrees=True, flip=False):
     r = R.from_euler('xyz', euler, degrees=degrees)
@@ -26,11 +27,22 @@ def quat2mat(quat, flip=False):
     return r.as_matrix()
 
 
-# def quatdiff(quat_curr, quat_des):
-#     #quat_curr*quat_des.conjugate()
-#     qdiff = 2*(quat_curr*quat_des.conjugate()).log()
-#     qdiff_array = quaternion.as_float_array(qdiff)
-#     return np.fmod(qdiff_array[1:],np.pi)
+def quatdiff_in_euler(quat_curr, quat_des):
+    """
+        Compute difference between quaternions and return 
+        Euler angles as difference
+    """
+    curr_mat = quaternion.as_rotation_matrix(
+        quaternion.from_float_array(quat_curr))
+    des_mat = quaternion.as_rotation_matrix(
+        quaternion.from_float_array(quat_des))
+    rel_mat = des_mat.T.dot(curr_mat)
+    rel_quat = quaternion.from_rotation_matrix(rel_mat)
+    vec = quaternion.as_float_array(rel_quat)[1:]
+    if rel_quat.w < 0.0:
+        vec = -vec
+
+    return -des_mat.dot(vec)
 
 identity_quat = np.array([1., 0., 0., 0.])
 

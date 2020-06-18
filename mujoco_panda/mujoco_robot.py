@@ -11,7 +11,7 @@ LOG_LEVEL = "DEBUG"
 
 class MujocoRobot(object):
 
-    def __init__(self, model_path, render=True, config=None):
+    def __init__(self, model_path, render=True, config=None, prestep_callables = {}, poststep_callables = {}):
         """
         Constructor
 
@@ -30,7 +30,7 @@ class MujocoRobot(object):
 
         self._nu = len(self._controllable_joints)
 
-        self._all_joints = range(self._model.nv)
+        self._all_joints = [self._model.joint_name2id(j) for j in self._model.joint_names]
 
         self._nq = len(self._all_joints)
 
@@ -54,6 +54,9 @@ class MujocoRobot(object):
 
         self._forwarded = False
 
+        self._pre_step_callables = prestep_callables
+        self._post_step_callables = poststep_callables
+
     def set_as_ee(self, body_name):
         self._ee_name = body_name
 
@@ -68,6 +71,14 @@ class MujocoRobot(object):
 
     def _use_last_defined_link(self):
         return self._model.nbody-1, self._model.body_id2name(self._model.nbody-1)
+
+    def add_pre_step_callable(self, f_dict):
+        if list(f_dict.keys())[0] not in self._pre_step_callables:
+            self._pre_step_callables.update(f_dict)
+
+    def add_post_step_callable(self, f_dict):
+        if list(f_dict.keys())[0] not in self._post_step_callables:
+            self._post_step_callables.update(f_dict)
 
     @property
     def sim(self):
@@ -96,6 +107,16 @@ class MujocoRobot(object):
             if not body in self._model.body_names:
                 return False
         return True
+
+    def get_ft_reading(self):
+        """
+        Return sensordata values. Assumes no other sensor is present
+        """
+        if self._model.sensor_type[0] == 4 and self._model.sensor_type[1] == 5:
+            return self._sim.data.sensordata[:3].copy(), self._sim.data.sensordata[3:6].copy()
+        else:
+            self._logger.debug("Could not find FT sensor as the first sensor in model!")
+            return np.zeros(6)
 
     def body_jacobian(self, body_id=None, joint_indices=None, recompute = True):
         """
@@ -178,7 +199,7 @@ class MujocoRobot(object):
         """
         if recompute and not self._forwarded:
             self.forward_sim()
-        return self._sim.data.site_xpos[site_id].copy(), quaternion.from_rotation_matrix(self._sim.data.site_xmat[site_id].copy().reshape(3, 3))
+        return self._sim.data.site_xpos[site_id].copy(), quaternion.as_float_array(quaternion.from_rotation_matrix(self._sim.data.site_xmat[site_id].copy().reshape(3, 3)))
 
     def ee_velocity(self):
         """
@@ -231,12 +252,14 @@ class MujocoRobot(object):
 
         return sorted(mvbl_jnts)
 
-    def start_asynchronous_run(self, rate=50):
+    def start_asynchronous_run(self, rate=None):
         """
         Start a separate thread running the step simulation 
         for the robot. Rendering still has to be called in the 
         main thread.
         """
+        if rate is None:
+            rate = 1/self._model.opt.timestep
         def continuous_run():
             self._asynch_thread_active = True
             while self._asynch_thread_active:
@@ -249,6 +272,9 @@ class MujocoRobot(object):
 
         self._asynch_sim_thread = threading.Thread(target=continuous_run)
         self._asynch_sim_thread.start()
+    
+    def joint_positions(self):
+        return self._sim.data.qpos[self._controllable_joints]
 
     def stop_asynchronous_run(self):
         self._asynch_thread_active = False
@@ -287,16 +313,24 @@ class MujocoRobot(object):
         :param render: flag to forward the renderer as well, defaults to True
         :type render: bool, optional
         """
-        self._mutex.acquire()
+        # self._mutex.acquire()
 
+        for f_id in self._pre_step_callables:
+            self._pre_step_callables[f_id][0](**self._pre_step_callables[f_id][1])
+
+        # print (self._ignore_grav_comp,"First")
         self._sim.step()
 
         self._forwarded = False
 
+        for f_id in self._post_step_callables:
+            self._post_step_callables[f_id][0](**self._post_step_callables[f_id][1])
+
         if render:
             self.render()
+        # print (self._ignore_grav_comp)
 
-        self._mutex.release()
+        # self._mutex.release()
 
     def forward_sim(self):
         self._sim.forward()
@@ -309,3 +343,5 @@ class MujocoRobot(object):
         """
         if self._viewer is not None:
             self._viewer.render()
+
+
