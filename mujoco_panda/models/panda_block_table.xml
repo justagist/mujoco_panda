@@ -5,17 +5,27 @@
     <include file="panda/assets.xml"/>
     <compiler meshdir=""/>
 
-    <option>
+    <default>  
+    <default class="block_visual">
+      <geom contype="0" conaffinity="0"/>
+    </default>
+    <default class="block_collision">
+      <geom contype="1" conaffinity="1" condim="4" solimp="0.99 0.99 0.01" solref="0.01 1"/>
+    </default>
+    <site rgba="1 0 0 .5"/>
+  </default> 
+
+    <option cone="elliptic" timestep="0.001" integrator="Euler">
         <flag gravity="disable"/>
     </option>
 
     <worldbody>
         <include file="panda/arm_with_block.xml"/>
-        <body name="table1" pos="0.4 -0.3 0.3">
-            <geom name="table1_geom" size=".3 0.3 0.01" rgba="0.96 0.85 0.76 1" friction="0.2 0.005 0.0001" mass="20" type="box"/>
+        <body name="table1" pos="0.4 -0.3 0.5">
+            <geom name="table1_geom" class="block_collision" size=".3 0.3 0.01" rgba="0.96 0.85 0.76 1" friction="0.2 0.005 0.0001" mass="20" type="box"/>
         </body>
-        <body name="table2" pos="0.4 0.3 0.3">
-            <geom name="table2_geom" size=".3 0.3 0.01" rgba="0.8 0.4 0.3 1" friction="0.7 0.005 0.0001" mass="20" type="box"/>
+        <body name="table2" pos="0.4 0.3 0.5">
+            <geom name="table2_geom" class="block_collision" size=".3 0.3 0.01" rgba="0.8 0.4 0.3 1" friction="0.7 0.005 0.0001" mass="20" type="box"/>
         </body>
     </worldbody>
 

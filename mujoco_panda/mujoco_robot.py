@@ -17,7 +17,7 @@ class MujocoRobot(object):
 
         :param model_path: path to model xml file for robot
         :type model_path: str
-        :param render: create a visualiser instance in mujoco; defaults to True
+        :param render: create a visualiser instance in mujoco; defaults to True.
         :type render: bool, optional
         """
         self._model = mjp.load_model_from_path(model_path)
@@ -40,11 +40,16 @@ class MujocoRobot(object):
         self._all_joint_dict = dict(
             zip(self._all_joint_names, self._all_joints))
 
-        if config is not None and config['ee_name'] is not None:
+        if 'ee_name' in config:
             self.set_as_ee(config['ee_name'])
         else:
             self._ee_idx, self._ee_name = self._use_last_defined_link()
             self._ee_is_a_site = False
+        
+        if 'ft_site_name' in config:
+            self._ft_site_name = config['ft_site_name']
+        else:
+            self._ft_site_name = False
 
         self._mutex = Lock()
         self._asynch_thread_active = False
@@ -108,12 +113,27 @@ class MujocoRobot(object):
                 return False
         return True
 
-    def get_ft_reading(self):
+    def get_ft_reading(self, in_global_frame=True):
         """
         Return sensordata values. Assumes no other sensor is present
         """
         if self._model.sensor_type[0] == 4 and self._model.sensor_type[1] == 5:
-            return self._sim.data.sensordata[:3].copy(), self._sim.data.sensordata[3:6].copy()
+            sensordata = self._sim.data.sensordata.copy()
+            if in_global_frame:
+                if self._ft_site_name:
+                    new_sensordata = np.zeros(6)
+                    _, site_ori = self.site_pose(self._model.site_name2id(self._ft_site_name))
+                    rotation_mat = quaternion.as_rotation_matrix(
+                        np.quaternion(*site_ori))
+                    new_sensordata[:3] = np.dot(
+                        rotation_mat, np.asarray(sensordata[:3]))
+                    new_sensordata[3:] = np.dot(
+                        rotation_mat, np.asarray(sensordata[3:]))
+                    sensordata = new_sensordata.copy()
+                else:
+                    self._logger.warning("Could not transform ft sensor values. Please\
+                        provide ft site name in config file.")
+            return sensordata[:3], sensordata[3:]
         else:
             self._logger.debug("Could not find FT sensor as the first sensor in model!")
             return np.zeros(6)

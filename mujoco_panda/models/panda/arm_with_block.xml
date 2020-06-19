@@ -49,7 +49,9 @@
 
                                     <site name='ee_site' pos='0 0 0.107' size="0.005, 0.005, 0.005" euler='0 0 -1.57'/>
                                     <body name="block" pos="0 0 0.137" euler="0 0 -0.785">
-                                        <geom name="block_geom" size=".05 .05 0.03" rgba="0.3 0.4 0.8 1" mass="1" friction="0.3 0.005 0.0001" type="box"/>
+                                        <geom name="block_geom" class="block_collision" size=".07 .1 0.03" rgba="0.3 0.4 0.8 1" mass="1" friction="0.7 0.005 0.0001" type="box"/>
+                                        <!-- <site name="block_tip" pos="0 0 0.015" euler="0 0 0" size="0.005, 0.005, 0.005"/> -->
+                                        <site name="block_ft_site" pos="0 0 0" euler="0 0 0" size="0.005, 0.005, 0.005"/>
                                     </body>
                                 </body>
                             </body>

@@ -2,20 +2,24 @@ import os
 import mujoco_py as mjp
 import numpy as np
 from .mujoco_robot import MujocoRobot
+from collections import deque
 from .gravity_robot import GravityRobot
 
 MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
     '/mujoco_panda/models/franka_panda.xml'
 
+DEFAULT_CONFIG = {
+    'ft_site_name': 'ee_site'
+}
 
 class PandaArm(MujocoRobot):
 
-    def __init__(self, model_path=MODEL_PATH, render=True, compensate_gravity=True, grav_comp_model_path=None, **kwargs):
+    def __init__(self, model_path=MODEL_PATH, render=True, config = DEFAULT_CONFIG, compensate_gravity=True, grav_comp_model_path=None, smooth_ft_sensor = False, **kwargs):
 
-        super(PandaArm, self).__init__(model_path, render=render, **kwargs)
+        super(PandaArm, self).__init__(model_path, render=render, config=config, **kwargs)
 
         self._compensate_gravity = compensate_gravity
-        
+
         self._grav_comp_robot = None
         if self._compensate_gravity:
             grav_comp_model_path = grav_comp_model_path if grav_comp_model_path is not None else model_path
@@ -23,10 +27,12 @@ class PandaArm(MujocoRobot):
 
             assert self._grav_comp_robot.model.nv == self._model.nv
 
-            self.add_pre_step_callable({'grav_comp': [self._grav_compensator_handle, {}]})
+            self.add_pre_step_callable(
+                {'grav_comp': [self._grav_compensator_handle, {}]})
+
             def _resetter():
                 self._ignore_grav_comp = False
-            self.add_post_step_callable({'grav_resetter': [_resetter,{}]})
+            self.add_post_step_callable({'grav_resetter': [_resetter, {}]})
 
         self._has_gripper = self.has_body(
             ['panda_hand', 'panda_leftfinger', 'panda_rightfinger'])
@@ -43,6 +49,12 @@ class PandaArm(MujocoRobot):
 
         self._neutral_pose = [0., -0.785, 0, -2.356, 0, 1.571, 0.785]
         self._ignore_grav_comp = False
+
+        self._smooth_ft = smooth_ft_sensor
+        if self._smooth_ft:
+            self._buffer_len = 20
+            self._clear_ft_buffer()
+
 
     @property
     def has_gripper(self):
@@ -131,6 +143,20 @@ class PandaArm(MujocoRobot):
 
         return pos_actuator_ids, torque_actuator_ids
 
+    def get_ft_reading(self):
+        if not self._smooth_ft:
+            return super(PandaArm, self).get_ft_reading()
+        else:
+            self._smooth_ft_buffer.append(np.append(*(super(PandaArm, self).get_ft_reading())))
+            vals = np.mean(np.asarray(self._smooth_ft_buffer),0)
+            return vals[:3].copy(), vals[3:].copy()
+
+    def _clear_ft_buffer(self):
+
+        self._count = 0
+        self._smooth_ft_buffer = deque(maxlen=self._buffer_len)
+
+
     def jacobian(self, body_id=None):
         """
         Return body jacobian of end-effector based on the arm joints.
@@ -180,7 +206,8 @@ class PandaArm(MujocoRobot):
         pos_ids = np.intersect1d(act_ids, self._pos_actuators)
 
         if len(torque_ids) > 0:
-            self.set_joint_torques(cmd[torque_ids], torque_ids, *args, **kwargs)
+            self.set_joint_torques(
+                cmd[torque_ids], torque_ids, *args, **kwargs)
 
         if len(pos_ids) > 0:
             self.set_joint_positions(cmd[pos_ids], pos_ids, *args, **kwargs)
@@ -217,7 +244,7 @@ class PandaArm(MujocoRobot):
             mjp.functions.mj_inverse(self._model, self._sim.data)
             cmd = self._sim.data.qfrc_inverse[torque_ids].copy()
         elif not compensate_dynamics and self._compensate_gravity:
-            self._ignore_grav_comp=True
+            self._ignore_grav_comp = True
             cmd[torque_ids] += self.gravity_compensation_torques()[torque_ids]
 
         if len(torque_ids) > 0:

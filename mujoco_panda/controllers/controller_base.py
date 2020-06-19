@@ -63,7 +63,7 @@ class ControllerBase(object):
                 self._mutex.acquire()
                 self._compute_cmd()
                 self._robot.set_joint_commands(
-                    self._cmd, joints=self._robot.actuated_arm_joints, compensate_dynamics=True)
+                    self._cmd, joints=self._robot.actuated_arm_joints, compensate_dynamics=False)
                 self._robot.step(render=False)
                 self._mutex.release()
 

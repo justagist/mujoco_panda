@@ -5,7 +5,7 @@
     <include file="panda/assets.xml"/>
     <compiler meshdir=""/>
 
-    <option>
+    <option cone="elliptic">
         <flag gravity="disable"/>
     </option>
 

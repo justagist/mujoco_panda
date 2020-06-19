@@ -53,9 +53,9 @@ class OSHybridForceMotionController(ControllerBase):
     def set_active(self, status=True):
         if status:
             self._goal_pos, self._goal_ori = self._robot.ee_pose()
-            self._goal_vel, self._goal_omg = np.zeros([3, 1]), np.zeros([3, 1])
+            self._goal_vel, self._goal_omg = np.zeros(3), np.zeros(3)
             self._goal_force, self._goal_torque = np.zeros(
-                [3, 1]), np.zeros([3, 1])
+                3), np.zeros(3)
         self._is_active = status
 
     def _compute_cmd(self):
@@ -104,10 +104,12 @@ class OSHybridForceMotionController(ControllerBase):
         #     force_control = self._force_dir.dot(np.sign(self._goal_force)*5.)
 
         # else:
-        # force_control = self._force_dir.dot(self._kp_f.dot(delta_force) - np.abs(self._kd_f.dot(delta_vel)) + self._goal_force)
+        force_control = self._force_dir.dot(self._kp_f.dot(delta_force) - np.abs(self._kd_f.dot(delta_vel)) + self._goal_force)
         # - (np.sign(delta_force)*np.abs(self._kd_f.dot(delta_vel)))
-        force_control = self._force_dir.dot(
-            self._kp_f.dot(delta_force) + curr_force)
+        # force_control = self._force_dir.dot(
+        #     self._kp_f.dot(delta_force))
+
+        # print("ctrl", force_control, delta_force, self._goal_force, curr_force)
 
         position_control = self._pos_p_dir.dot(
             self._kp_p.dot(delta_pos) + self._kd_p.dot(delta_vel))
@@ -161,11 +163,25 @@ class OSHybridForceMotionController(ControllerBase):
 
         return self._cmd
 
-    def set_goal(self, goal_pos, goal_ori=None, goal_vel=np.zeros(3), goal_omg=np.zeros(3), goal_force=np.zeros(3), goal_torque=np.zeros(3)):
-
+    def set_goal(self, goal_pos, goal_ori=None, goal_vel=np.zeros(3), goal_omg=np.zeros(3), goal_force=None, goal_torque=None):
+        self._mutex.acquire()
         self._goal_pos = goal_pos
         self._goal_ori = goal_ori
         self._goal_vel = goal_vel
         self._goal_omg = goal_omg
-        self._goal_force = goal_force
-        self._goal_torque = goal_torque
+        if goal_force is not None:
+            self._goal_force = goal_force
+        if goal_torque is not None:
+            self._goal_torque = goal_torque
+        self._mutex.release()
+
+    def change_ft_dir(self, directions):
+        self._mutex.acquire()
+        self._force_dir = np.diag(directions[:3])
+
+        self._torque_dir = np.diag(directions[3:])
+
+        self._pos_p_dir = np.diag([1, 1, 1]) ^ self._force_dir
+
+        self._pos_o_dir = np.diag([1, 1, 1]) ^ self._torque_dir
+        self._mutex.release()
