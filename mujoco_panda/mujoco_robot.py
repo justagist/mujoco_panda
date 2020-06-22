@@ -1,9 +1,9 @@
-import mujoco_py as mjp
-import numpy as np
-import threading
-import logging
 import time
+import logging
+import threading
 import quaternion
+import numpy as np
+import mujoco_py as mjp
 from threading import Lock
 
 LOG_LEVEL = "DEBUG"

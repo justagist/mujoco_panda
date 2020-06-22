@@ -1,8 +1,8 @@
 import os
-import mujoco_py as mjp
 import numpy as np
-from .mujoco_robot import MujocoRobot
+import mujoco_py as mjp
 from collections import deque
+from .mujoco_robot import MujocoRobot
 from .gravity_robot import GravityRobot
 
 MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
@@ -11,6 +11,7 @@ MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
 DEFAULT_CONFIG = {
     'ft_site_name': 'ee_site'
 }
+
 
 class PandaArm(MujocoRobot):
     """
@@ -31,9 +32,11 @@ class PandaArm(MujocoRobot):
             smoothed (low-pass-filter) force torque value **in world frame**. Defaults to False
         :type smooth_ft_sensor: bool, optional
     """
-    def __init__(self, model_path=MODEL_PATH, render=True, config = DEFAULT_CONFIG, compensate_gravity=True, grav_comp_model_path=None, smooth_ft_sensor = False, **kwargs):
 
-        super(PandaArm, self).__init__(model_path, render=render, config=config, **kwargs)
+    def __init__(self, model_path=MODEL_PATH, render=True, config=DEFAULT_CONFIG, compensate_gravity=True, grav_comp_model_path=None, smooth_ft_sensor=False, **kwargs):
+
+        super(PandaArm, self).__init__(model_path,
+                                       render=render, config=config, **kwargs)
 
         self._compensate_gravity = compensate_gravity
 
@@ -62,7 +65,7 @@ class PandaArm(MujocoRobot):
         else:
             self.set_as_ee("ee_site")
 
-        self._group_actuator_joints() # identifies position and torque actuators
+        self._group_actuator_joints()  # identifies position and torque actuators
 
         self._neutral_pose = [0., -0.785, 0, -2.356, 0, 1.571, 0.785]
         self._ignore_grav_comp = False
@@ -71,8 +74,10 @@ class PandaArm(MujocoRobot):
 
         if self._smooth_ft:
 
-            self._smooth_ft_buffer = deque(maxlen=50) # change length of smoothing buffer if required
-            self.add_pre_step_callable({'ft_smoother': [self._smoother_handle,[True]]})
+            # change length of smoothing buffer if required
+            self._smooth_ft_buffer = deque(maxlen=50)
+            self.add_pre_step_callable(
+                {'ft_smoother': [self._smoother_handle, [True]]})
 
     @property
     def has_gripper(self):
@@ -165,7 +170,7 @@ class PandaArm(MujocoRobot):
 
         return pos_actuator_ids, torque_actuator_ids
 
-    def get_ft_reading(self, pr=False,*args, **kwargs):
+    def get_ft_reading(self, pr=False, *args, **kwargs):
         """
         Overriding the parent class method for FT smoothing. FT smoothing has to be
         enabled while initialising PandaArm instance.
@@ -176,7 +181,7 @@ class PandaArm(MujocoRobot):
         if not self._smooth_ft:
             return super(PandaArm, self).get_ft_reading(*args, **kwargs)
         else:
-            vals = np.mean(np.asarray(self._smooth_ft_buffer),0)
+            vals = np.mean(np.asarray(self._smooth_ft_buffer), 0)
             return vals[:3].copy(), vals[3:].copy()
 
     def jacobian(self, body_id=None):
@@ -201,7 +206,8 @@ class PandaArm(MujocoRobot):
         if hard:
             self.hard_set_joint_positions(self._neutral_pose)
         else:
-            self.set_joint_positions(self._neutral_pose) # position control, requires position actuators.
+            # position control, requires position actuators.
+            self.set_joint_positions(self._neutral_pose)
 
     def get_actuator_ids(self, joint_list):
         """
@@ -234,7 +240,7 @@ class PandaArm(MujocoRobot):
             return
 
         if joints is None:
-            joints = self.actuated_arm_joint_names[:len(cmd)]
+            joints = self.actuated_arm_joints[:len(cmd)]
 
         act_ids = self.get_actuator_ids(joints)
         cmd = np.asarray(cmd)
@@ -308,7 +314,7 @@ class PandaArm(MujocoRobot):
 
         act_ids = self.get_actuator_ids(joint_ids)
 
-        pos_ids = np.intersect1d(act_ids, self._torque_actuators)
+        pos_ids = np.intersect1d(act_ids, self._pos_actuators)
 
         assert cmd[pos_ids].shape[0] == pos_ids.shape[0]
 
@@ -339,3 +345,43 @@ class PandaArm(MujocoRobot):
     def _smoother_handle(self, *args, **kwargs):
         self._smooth_ft_buffer.append(
             np.append(*(super(self).get_ft_reading(*args, **kwargs))))
+
+    @classmethod
+    def fullRobotWithTorqueActuators(cls, **kwargs):
+        """
+        Create an instance of this class using the model of the full
+        robot (arm + gripper) and torque actuators at arm joints.
+        """
+        model_path = os.environ['MJ_PANDA_PATH'] + \
+            '/mujoco_panda/models/franka_panda.xml'
+        return cls(model_path=model_path, **kwargs)
+
+    @classmethod
+    def fullRobotWithPositionActuators(cls, **kwargs):
+        """
+        Create an instance of this class using the model of the full
+        robot (arm + gripper) and position actuators at arm joints.
+        """
+        model_path = os.environ['MJ_PANDA_PATH'] + \
+            '/mujoco_panda/models/franka_panda_pos.xml'
+        return cls(model_path=model_path, **kwargs)
+
+    @classmethod
+    def onlyArmWithTorqueActuators(cls, **kwargs):
+        """
+        Create an instance of this class using the model of the
+        robot arm without gripper, and torque actuators at arm joints.
+        """
+        model_path = os.environ['MJ_PANDA_PATH'] + \
+            '/mujoco_panda/models/franka_panda_no_gripper.xml'
+        return cls(model_path=model_path, **kwargs)
+
+    @classmethod
+    def onlyArmWithPositionActuators(cls, **kwargs):
+        """
+        Create an instance of this class using the model of the
+        robot arm without gripper, and position actuators at arm joints.
+        """
+        model_path = os.environ['MJ_PANDA_PATH'] + \
+            '/mujoco_panda/models/franka_panda_pos_no_gripper.xml'
+        return cls(model_path=model_path, **kwargs)

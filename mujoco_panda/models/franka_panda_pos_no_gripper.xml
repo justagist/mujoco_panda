@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<mujoco model="mujoco_panda_model">
+
+    <include file="other/simple_scene.xml"/>
+    <include file="panda/assets.xml"/>
+    <compiler meshdir=""/>
+
+    <option cone="elliptic">
+        <flag gravity="enable"/>
+    </option>
+
+    <worldbody>
+        <include file="panda/arm.xml"/>
+    </worldbody>
+
+    <actuator>
+        <include file="panda/actuators/pos.xml"/>
+    </actuator>
+
+    <sensor>
+        <include file="panda/sensors/ft_sensor.xml" />
+    </sensor>
+
+</mujoco>

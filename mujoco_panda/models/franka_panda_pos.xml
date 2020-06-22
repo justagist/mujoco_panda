@@ -14,7 +14,7 @@
     </worldbody>
 
     <actuator>
-        <include file="panda/actuators/torque_with_gripper.xml"/>
+        <include file="panda/actuators/pos_with_gripper.xml"/>
     </actuator>
 
     <sensor>

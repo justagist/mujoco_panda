@@ -1,6 +1,9 @@
 import mujoco_py as mjp
 
 class GravityRobot(object):
+    """
+    Robot instance for gravity compensation only.
+    """
 
     def __init__(self, model_path):
         self.model = mjp.load_model_from_path(model_path)

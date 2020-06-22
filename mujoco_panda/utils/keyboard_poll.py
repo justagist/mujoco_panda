@@ -1,6 +1,6 @@
 import sys
-import termios
 import atexit
+import termios
 from select import select
 
 

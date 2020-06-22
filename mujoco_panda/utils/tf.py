@@ -1,7 +1,7 @@
 import mujoco_py
+import quaternion
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-import quaternion
 
 def euler2quat(euler, degrees=True, flip=False):
     r = R.from_euler('xyz', euler, degrees=degrees)

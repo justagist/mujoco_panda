@@ -2,6 +2,9 @@ from mujoco_py.generated import const
 from .tf import quat2Mat
 
 def render_frame(viewer, pos, quat, scale = 0.1, alpha = 1.):
+    """ 
+    Visualise a 3D coordinate frame.
+    """
     viewer.add_marker(pos=pos,
                       label='',
                       type=const.GEOM_SPHERE,
