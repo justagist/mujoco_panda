@@ -13,7 +13,24 @@ DEFAULT_CONFIG = {
 }
 
 class PandaArm(MujocoRobot):
+    """
+        Contructor
 
+        :param model_path: path to model xml file for Panda, defaults to MODEL_PATH
+        :type model_path: str, optional
+        :param render: if set to True, will create a visualiser instance, defaults to True
+        :type render: bool, optional
+        :param config: see :py:class:`MujocoRobot`, defaults to DEFAULT_CONFIG
+        :type config: dict, optional
+        :param compensate_gravity: if set to True, will perform gravity compensation. Only required when using torque actuators
+            and gravity is enabled. Defaults to True.
+        :type compensate_gravity: bool, optional
+        :param grav_comp_model_path: path to xml file for gravity compensation robot, defaults to :param:`model_path`.
+        :type grav_comp_model_path: str, optional
+        :param smooth_ft_sensor: (experimental) if set to True, :py:meth:`MujocoRobot.get_ft_reading` returns
+            smoothed (low-pass-filter) force torque value **in world frame**. Defaults to False
+        :type smooth_ft_sensor: bool, optional
+    """
     def __init__(self, model_path=MODEL_PATH, render=True, config = DEFAULT_CONFIG, compensate_gravity=True, grav_comp_model_path=None, smooth_ft_sensor = False, **kwargs):
 
         super(PandaArm, self).__init__(model_path, render=render, config=config, **kwargs)
@@ -45,19 +62,24 @@ class PandaArm(MujocoRobot):
         else:
             self.set_as_ee("ee_site")
 
-        self._group_actuator_joints()
+        self._group_actuator_joints() # identifies position and torque actuators
 
         self._neutral_pose = [0., -0.785, 0, -2.356, 0, 1.571, 0.785]
         self._ignore_grav_comp = False
 
         self._smooth_ft = smooth_ft_sensor
-        if self._smooth_ft:
-            self._buffer_len = 20
-            self._clear_ft_buffer()
 
+        if self._smooth_ft:
+
+            self._smooth_ft_buffer = deque(maxlen=50) # change length of smoothing buffer if required
+            self.add_pre_step_callable({'ft_smoother': [self._smoother_handle,[True]]})
 
     @property
     def has_gripper(self):
+        """
+        :return: True if gripper is present in model
+        :rtype: bool
+        """
         return self._has_gripper
 
     def _group_actuator_joints(self):
@@ -71,7 +93,7 @@ class PandaArm(MujocoRobot):
 
         for jnt in arm_joint_names:
             jnt_id = self._model.joint_name2id(jnt)
-            if jnt_id in self._controllable_joints:
+            if jnt_id in self.controllable_joints:
                 self.actuated_arm_joints.append(jnt_id)
                 self.actuated_arm_joint_names.append(jnt)
             else:
@@ -97,7 +119,7 @@ class PandaArm(MujocoRobot):
 
             for jnt in gripper_joint_names:
                 jnt_id = self._model.joint_name2id(jnt)
-                if jnt_id in self._controllable_joints:
+                if jnt_id in self.controllable_joints:
                     self.actuated_gripper_joints.append(jnt_id)
                     self.actuated_gripper_joint_names.append(jnt)
                 else:
@@ -143,19 +165,19 @@ class PandaArm(MujocoRobot):
 
         return pos_actuator_ids, torque_actuator_ids
 
-    def get_ft_reading(self):
+    def get_ft_reading(self, pr=False,*args, **kwargs):
+        """
+        Overriding the parent class method for FT smoothing. FT smoothing has to be
+        enabled while initialising PandaArm instance.
+
+        :return: force, torque
+        :rtype: np.ndarray, np.ndarray
+        """
         if not self._smooth_ft:
-            return super(PandaArm, self).get_ft_reading()
+            return super(PandaArm, self).get_ft_reading(*args, **kwargs)
         else:
-            self._smooth_ft_buffer.append(np.append(*(super(PandaArm, self).get_ft_reading())))
             vals = np.mean(np.asarray(self._smooth_ft_buffer),0)
             return vals[:3].copy(), vals[3:].copy()
-
-    def _clear_ft_buffer(self):
-
-        self._count = 0
-        self._smooth_ft_buffer = deque(maxlen=self._buffer_len)
-
 
     def jacobian(self, body_id=None):
         """
@@ -169,13 +191,28 @@ class PandaArm(MujocoRobot):
         return self.body_jacobian(body_id=body_id, joint_indices=self.actuated_arm_joints)
 
     def set_neutral_pose(self, hard=True):
+        """
+        Set robot to neutral pose (tuck pose)
+
+        :param hard: if False, uses position control (requires position actuators in joints). Defaults to True,
+            hard set joint positions in simulator.
+        :type hard: bool, optional
+        """
         if hard:
             self.hard_set_joint_positions(self._neutral_pose)
         else:
-            self.set_joint_positions(self._neutral_pose)
+            self.set_joint_positions(self._neutral_pose) # position control, requires position actuators.
 
     def get_actuator_ids(self, joint_list):
+        """
+        Get actuator ids for the provided list of joints
 
+        :param joint_list: list of joint indices
+        :type joint_list: [int]
+        :raises ValueError: if joint does not have a valid actuator attached.
+        :return: list of actuator ids
+        :rtype: np.ndarray
+        """
         try:
             return np.asarray([self._joint_to_actuator_map[i] for i in joint_list])
         except KeyError as e:
@@ -187,7 +224,7 @@ class PandaArm(MujocoRobot):
         Uses available actuator to control the specified joints. Automatically selects
         and controls the actuator for joints of the provided ids.
 
-        :param cmd: commands
+        :param cmd: joint commands
         :type cmd: np.ndarray or [float]
         :param joints: ids of joints to command, defaults to all controllable joints
         :type joints: [int], optional
@@ -217,12 +254,13 @@ class PandaArm(MujocoRobot):
         Set joint torques for direct torque control. Use for torque controlling.
         Works for joints whose actuators are of type 'motor'.
 
-        ..note: For better performance, this method cancels all other dynamics 
-        acting on the robot, and applies the provided cmd as joint force.
-
-        @param cmd  : torque values
-        @type cmd   : [float] * self._nu
-
+        :param cmd: torque values
+        :type cmd: [float] (size: self._nu)
+        :param joint_ids: ids of joints to control
+        :type joint_ids: [int]
+        :param compensate_dynamics: if set to True, compensates for external dynamics using inverse
+            dynamics computation. Not recommended when performing contact tasks.
+        :type compensate_dynamics: bool
         """
 
         cmd = np.asarray(cmd).flatten()
@@ -255,12 +293,10 @@ class PandaArm(MujocoRobot):
         Set joint positions for position control.
         Works for joints whose actuators are of type 'motor'.
 
-        ..note: For better performance, this method cancels all other dynamics 
-        acting on the robot, and applies the provided cmd as joint force.
-
-        @param cmd  : torque values
-        @type cmd   : [float] * self._nu
-
+        :param cmd: torque values
+        :type cmd: [float] (size: self._nu)
+        :param joint_ids: ids of joints to control
+        :type joint_ids: [int]
         """
         self._ignore_grav_comp = False
         if cmd is None:
@@ -280,8 +316,13 @@ class PandaArm(MujocoRobot):
             self.set_actuator_ctrl(cmd[pos_ids], pos_ids)
 
     def gravity_compensation_torques(self):
+        """
+        Get the gravity compensation torque at current sim timestep
 
-        self._grav_comp_robot.sim.data.qpos[self._grav_comp_robot._all_joints] = self._sim.data.qpos[self._all_joints].copy(
+        :return: gravity compensation torques in all movable joints
+        :rtype: np.ndarray
+        """
+        self._grav_comp_robot.sim.data.qpos[self._grav_comp_robot._all_joints] = self._sim.data.qpos[self.qpos_joints].copy(
         )
         self._grav_comp_robot.sim.data.qvel[self._grav_comp_robot._controllable_joints] = 0.
         self._grav_comp_robot.sim.data.qacc[self._grav_comp_robot._controllable_joints] = 0.
@@ -291,7 +332,10 @@ class PandaArm(MujocoRobot):
         return self._grav_comp_robot.sim.data.qfrc_inverse.copy()
 
     def _grav_compensator_handle(self):
-
         if self._compensate_gravity and not self._ignore_grav_comp:
             self._sim.data.ctrl[self._torque_actuators] = self.gravity_compensation_torques()[
                 self._torque_actuators]
+
+    def _smoother_handle(self, *args, **kwargs):
+        self._smooth_ft_buffer.append(
+            np.append(*(super(self).get_ft_reading(*args, **kwargs))))
