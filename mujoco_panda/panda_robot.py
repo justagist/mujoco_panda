@@ -367,7 +367,7 @@ class PandaArm(MujocoRobot):
         return cls(model_path=model_path, **kwargs)
 
     @classmethod
-    def onlyArmWithTorqueActuators(cls, **kwargs):
+    def withTorqueActuators(cls, **kwargs):
         """
         Create an instance of this class using the model of the
         robot arm without gripper, and torque actuators at arm joints.
@@ -377,7 +377,7 @@ class PandaArm(MujocoRobot):
         return cls(model_path=model_path, **kwargs)
 
     @classmethod
-    def onlyArmWithPositionActuators(cls, **kwargs):
+    def withPositionActuators(cls, **kwargs):
         """
         Create an instance of this class using the model of the
         robot arm without gripper, and position actuators at arm joints.

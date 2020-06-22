@@ -387,6 +387,32 @@ class MujocoRobot(object):
             joints = self.qpos_joints
         return self._sim.data.qpos[joints]
 
+    def joint_velocities(self, joints=None):
+        """
+        Get velocities of robot joints
+
+        :param joints: list of joints whose velocities are to be obtained, defaults to all present joints
+        :type joints: [int], optional
+        :return: joint velocities
+        :rtype: np.ndarray
+        """
+        if joints is None:
+            joints = self.movable_joints
+        return self._sim.data.qvel[joints]
+
+    def joint_accelerations(self, joints=None):
+        """
+        Get accelerations of robot joints
+
+        :param joints: list of joints whose accelerations are to be obtained, defaults to all present joints
+        :type joints: [int], optional
+        :return: joint accelerations
+        :rtype: np.ndarray
+        """
+        if joints is None:
+            joints = self.movable_joints
+        return self._sim.data.qacc[joints]
+
     def stop_asynchronous_run(self):
         """
         Stop asynchronous run thread. See :func:`start_asynchronous_run`.
