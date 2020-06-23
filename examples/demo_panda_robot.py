@@ -30,4 +30,3 @@ if __name__ == "__main__":
 
 # in the parallel debug interface run PandaArm arm commands to control and monitor the robot.
 # eg: p.set_neutral_pose(), p.joint_angles(), p.ee_pose(), etc.
-    
