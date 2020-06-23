@@ -74,6 +74,8 @@ class MujocoRobot(object):
         self._pre_step_callables = prestep_callables
         self._post_step_callables = poststep_callables
 
+        self._first_step_not_done = True
+
     def set_as_ee(self, body_name):
         """
         Set provided body or site as the end-effector of the robot.
@@ -167,6 +169,8 @@ class MujocoRobot(object):
         :rtype: np.ndarray (3,), np.ndarray (3,)
         """
         if self._model.sensor_type[0] == 4 and self._model.sensor_type[1] == 5:
+            if not self._forwarded:
+                self.forward_sim()
             sensordata = -self._sim.data.sensordata.copy() # change sign to make force relative to parent body
             if in_global_frame:
                 if self._ft_site_name:
@@ -472,7 +476,12 @@ class MujocoRobot(object):
             self._pre_step_callables[f_id][0](
                 *self._pre_step_callables[f_id][1])
 
+
         self._sim.step()
+
+        # if self._first_step_not_done:
+        #     self._first_step_not_done = False
+        #     self._sim.data.sensordata[:] = np.zeros_like(self._sim.data.sensordata)
 
         self._forwarded = False
 

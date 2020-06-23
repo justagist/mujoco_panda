@@ -25,7 +25,7 @@
             <geom name="table1_geom" class="block_collision" size=".3 0.3 0.01" rgba="0.96 0.85 0.76 1" friction="0.2 0.005 0.0001" mass="20" type="box"/>
         </body>
         <body name="table2" pos="0.4 0.3 0.5">
-            <geom name="table2_geom" class="block_collision" size=".3 0.3 0.01" rgba="0.8 0.4 0.3 1" friction="0.7 0.005 0.0001" mass="20" type="box"/>
+            <geom name="table2_geom" class="block_collision" size=".3 0.3 0.01" rgba="0.8 0.4 0.3 1" friction="2.5 0.005 0.0001" mass="20" type="box"/>
         </body>
     </worldbody>
 

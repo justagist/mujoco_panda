@@ -78,6 +78,7 @@ class PandaArm(MujocoRobot):
 
             # change length of smoothing buffer if required
             self._smooth_ft_buffer = deque(maxlen=50)
+            self._smooth_ft_buffer.append(np.asarray([0,0,0,0,0,0]))
             self.add_pre_step_callable(
                 {'ft_smoother': [self._smoother_handle, [True]]})
 
@@ -172,7 +173,7 @@ class PandaArm(MujocoRobot):
 
         return pos_actuator_ids, torque_actuator_ids
 
-    def get_ft_reading(self, pr=False, *args, **kwargs):
+    def get_ft_reading(self, *args, **kwargs):
         """
         Overriding the parent class method for FT smoothing. FT smoothing has to be
         enabled while initialising PandaArm instance.
@@ -183,8 +184,8 @@ class PandaArm(MujocoRobot):
         if not self._smooth_ft:
             return super(PandaArm, self).get_ft_reading(*args, **kwargs)
         else:
-            vals = np.mean(np.asarray(self._smooth_ft_buffer), 0)
-            return vals[:3].copy(), vals[3:].copy()
+            vals = np.mean(np.asarray(self._smooth_ft_buffer).copy(), 0)
+            return vals[:3], vals[3:]
 
     def jacobian(self, body_id=None):
         """
