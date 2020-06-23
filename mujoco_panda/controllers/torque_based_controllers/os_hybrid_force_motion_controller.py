@@ -115,8 +115,8 @@ class OSHybridForceMotionController(ControllerBase):
 
         delta_omg = self._pos_o_dir.dot(self._goal_omg - curr_omg)
 
-        # compute force control part along force dimensions
-        force_control = self._force_dir.dot(self._kp_f.dot(delta_force) - np.abs(self._kd_f.dot(delta_vel)) + self._goal_force)
+        # compute force control part along force dimensions # negative sign to convert from experienced to applied
+        force_control = -self._force_dir.dot(self._kp_f.dot(delta_force) - np.abs(self._kd_f.dot(delta_vel)) + self._goal_force)
 
         # compute position control force along position dimensions (orthogonal to force dims)
         position_control = self._pos_p_dir.dot(
@@ -135,8 +135,9 @@ class OSHybridForceMotionController(ControllerBase):
             ori_pos_ctrl = self._pos_o_dir.dot(
                 self._kp_o.dot(delta_ori) + self._kd_o.dot(delta_omg))
 
-            # compute torque control force along torque dimensions (orthogonal to orientation dimensions)
-            torque_f_ctrl = self._torque_dir.dot(self._kp_t.dot(
+            # compute torque control force along torque dimensions (orthogonal to orientation dimensions) 
+            # negative sign to convert from experienced to applied
+            torque_f_ctrl = - self._torque_dir.dot(self._kp_t.dot(
                 delta_torque) - self._kd_t.dot(delta_omg) + self._goal_torque)
 
             # total torque in cartesian at end-effector
@@ -180,9 +181,9 @@ class OSHybridForceMotionController(ControllerBase):
         self._goal_vel = goal_vel
         self._goal_omg = goal_omg
         if goal_force is not None:
-            self._goal_force = goal_force
+            self._goal_force = - np.asarray(goal_force) # applied force = - experienced force
         if goal_torque is not None:
-            self._goal_torque = goal_torque
+            self._goal_torque = - np.asarray(goal_torque) # applied torque = - experienced torque
         self._mutex.release()
 
     def change_ft_dir(self, directions):

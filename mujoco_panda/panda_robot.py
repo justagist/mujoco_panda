@@ -9,7 +9,8 @@ MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
     '/mujoco_panda/models/franka_panda.xml'
 
 DEFAULT_CONFIG = {
-    'ft_site_name': 'ee_site'
+    'ft_site_name': 'ee_site',
+    'ee_name': 'ee_site'
 }
 
 
@@ -60,10 +61,11 @@ class PandaArm(MujocoRobot):
         self._logger.info("PandaArm: Robot instance initialised with{} gripper".format(
             "out" if not self._has_gripper else ""))
 
-        if self._has_gripper:
-            self.set_as_ee("panda_hand")
-        else:
-            self.set_as_ee("ee_site")
+        if 'ee_name' not in config:
+            if self._has_gripper:
+                self.set_as_ee("panda_hand")
+            else:
+                self.set_as_ee("ee_site")
 
         self._group_actuator_joints()  # identifies position and torque actuators
 
@@ -344,7 +346,7 @@ class PandaArm(MujocoRobot):
 
     def _smoother_handle(self, *args, **kwargs):
         self._smooth_ft_buffer.append(
-            np.append(*(super(self).get_ft_reading(*args, **kwargs))))
+            np.append(*(super(PandaArm, self).get_ft_reading(*args, **kwargs))))
 
     @classmethod
     def fullRobotWithTorqueActuators(cls, **kwargs):

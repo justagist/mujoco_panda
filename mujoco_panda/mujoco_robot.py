@@ -30,6 +30,11 @@ class MujocoRobot(object):
 
     def __init__(self, model_path, render=True, config=None, prestep_callables={}, poststep_callables={}):
 
+        logging.basicConfig(format='\n{}: %(levelname)s: %(message)s\n'.format(
+            self.__class__.__name__), level=LOG_LEVEL)
+        self._logger = logging.getLogger(__name__)
+
+
         self._model = mjp.load_model_from_path(model_path)
         self._sim = mjp.MjSim(self._model)
         self._viewer = mjp.MjViewer(self._sim) if render else None
@@ -63,9 +68,6 @@ class MujocoRobot(object):
         self._mutex = Lock()
         self._asynch_thread_active = False
 
-        logging.basicConfig(format='\n{}: %(levelname)s: %(message)s\n'.format(
-            self.__class__.__name__), level=LOG_LEVEL)
-        self._logger = logging.getLogger(__name__)
 
         self._forwarded = False
 
@@ -83,7 +85,7 @@ class MujocoRobot(object):
 
         if body_name in self._model.site_names:
             self._ee_is_a_site = True
-            self._ee_idx = self._model.site_name2id("ee_site")
+            self._ee_idx = self._model.site_name2id(body_name)
             self._logger.debug(
                 "End-effector is a site in model: {}".format(body_name))
         else:
@@ -165,7 +167,7 @@ class MujocoRobot(object):
         :rtype: np.ndarray (3,), np.ndarray (3,)
         """
         if self._model.sensor_type[0] == 4 and self._model.sensor_type[1] == 5:
-            sensordata = self._sim.data.sensordata.copy()
+            sensordata = -self._sim.data.sensordata.copy() # change sign to make force relative to parent body
             if in_global_frame:
                 if self._ft_site_name:
                     new_sensordata = np.zeros(6)
