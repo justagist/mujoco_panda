@@ -84,8 +84,8 @@ class ControllerBase(object):
         :type control_rate: float
         """
         while self._is_running:
+            now_c = time.time()
             if self._is_active:
-                now_c = time.time()
                 self._mutex.acquire()
                 self._compute_cmd()
                 self._robot.set_joint_commands(
@@ -93,10 +93,10 @@ class ControllerBase(object):
                 self._robot.step(render=False)
                 self._mutex.release()
 
-                elapsed_c = time.time() - now_c
-                sleep_time_c = (1./control_rate) - elapsed_c
-                if sleep_time_c > 0.0:
-                    time.sleep(sleep_time_c)
+            elapsed_c = time.time() - now_c
+            sleep_time_c = (1./control_rate) - elapsed_c
+            if sleep_time_c > 0.0:
+                time.sleep(sleep_time_c)
 
     def stop_controller_cleanly(self):
         """

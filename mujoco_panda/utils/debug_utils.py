@@ -2,11 +2,12 @@ try:
     from tkinter import *
     _NO_TK = False
 except ImportError:
-    print ("tkinter not found. Cannot run with ParallelPythonCmd with tkinter.")
+    print("tkinter not found. Cannot run with ParallelPythonCmd with tkinter.")
     _NO_TK = True
-    
+
 import threading
 from .keyboard_poll import KBHit
+
 
 class ParallelPythonCmd(object):
 
@@ -37,7 +38,7 @@ class ParallelPythonCmd(object):
 
     def _run(self):
         kb = KBHit()
-        print ("Running KBHit debugger...")
+        print("Running KBHit debugger...")
         string = ''
         while True:
             c = kb.getch()
@@ -46,14 +47,14 @@ class ParallelPythonCmd(object):
             elif ord(c) == 10:
                 ret = self._callable(string)
                 if ret is not None:
-                    print ("Cmd: {}\nOutput: {}".format(string,ret))
+                    print("Cmd: {}\nOutput: {}".format(string, ret))
                 string = ''
             elif ord(c) == 127:
                 if string != '':
                     string = string[:-1]
             else:
                 string += c
-    
+
     def _run_tk(self):
         print("Running tk debugger...")
         self._root = Tk()
@@ -76,6 +77,8 @@ class ParallelPythonCmd(object):
         self._e.delete(0, 'end')
 
 # demo exec function handle
+
+
 def exec_func(cmd):
     """
     Sample handle that can be used with :py:class`ParallelPythonCmd`.
@@ -91,8 +94,15 @@ def exec_func(cmd):
 
     if cmd == '':
         return None
-    a = eval(cmd)
     print(cmd)
-    print(a)
+    try:
+        if "=" in cmd:
+            exec(cmd)
+            a = cmd
+        else:
+            a = eval(cmd)
+            print(a)
+    except Exception as e:
+        a = "Exception: {}: {}".format(e.what(),e)
     if a is not None:
         return str(a)

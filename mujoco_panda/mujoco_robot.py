@@ -1,3 +1,4 @@
+import copy
 import time
 import logging
 import threading
@@ -8,12 +9,24 @@ from threading import Lock
 
 LOG_LEVEL = "DEBUG"
 
+class ContactInfo(object):
+    def __init__(self, pos, ori, ft):
+        self.pos = pos.copy()
+        self.ori_mat = ori.copy()
+        self.quat = quaternion.as_float_array(quaternion.from_rotation_matrix(self.ori_mat))
+        self.ft = ft.copy()
+    
+    def __str__(self):
+        return "pos: {}, quat: {}, ft: {}".format(pos,quat,ft)
+
 class MujocoRobot(object):
     """
         Constructor
 
         :param model_path: path to model xml file for robot
         :type model_path: str
+        :param from_model: PyMjModel instance of robot. If provided, will ignore the `model_path` param.
+        :type from_model: mjp.PyMjModel
         :param render: create a visualiser instance in mujoco; defaults to True.
         :type render: bool, optional
         :param prestep_callables: dictionary of callable iterms to be run before running
@@ -28,14 +41,17 @@ class MujocoRobot(object):
         :type config: {str: str}
     """
 
-    def __init__(self, model_path, render=True, config=None, prestep_callables={}, poststep_callables={}):
+    def __init__(self, model_path=None, render=True, config=None, prestep_callables={}, poststep_callables={}, from_model=False):
 
         logging.basicConfig(format='\n{}: %(levelname)s: %(message)s\n'.format(
             self.__class__.__name__), level=LOG_LEVEL)
         self._logger = logging.getLogger(__name__)
 
+        if isinstance(from_model,mjp.cymj.PyMjModel):
+            self._model = from_model
+        else:
+            self._model = mjp.load_model_from_path(model_path)
 
-        self._model = mjp.load_model_from_path(model_path)
         self._sim = mjp.MjSim(self._model)
         self._viewer = mjp.MjViewer(self._sim) if render else None
 
@@ -192,6 +208,45 @@ class MujocoRobot(object):
             self._logger.debug(
                 "Could not find FT sensor as the first sensor in model!")
             return np.zeros(6)
+
+    def get_contact_info(self):
+        """
+        Get details about physical contacts between bodies.
+        Includes contact point positions, orientations, contact forces.
+
+        :return: list of ContactInfo objects
+        :rtype: [ContactInfo]
+        """
+        self._mutex.acquire()
+        mjp.functions.mj_rnePostConstraint(
+            self._sim.model, self._sim.data)
+
+        nc = self._sim.data.ncon
+
+        c_array = np.zeros(6, dtype=np.float64)
+        contact_list = []
+        
+        for i in range(nc):
+            contact = self._sim.data.contact[i]
+            c_array.fill(0)
+            mjp.functions.mj_contactForce(
+                self._sim.model, self._sim.data, i, c_array)
+
+            ori = np.flip(contact.frame.reshape(3, 3).T, 1)
+
+            # # for mujoco the normal force is along x
+            # # so for the convention we flip X and Z
+            # c_array = np.hstack([np.flip(c_array[:3]),
+            #                      np.flip(c_array[3:])])
+
+            contact_list.append(copy.deepcopy(ContactInfo(
+                contact.pos.copy(), ori.copy(), c_array.copy())))
+
+        assert nc == len(contact_list)
+        
+        self._mutex.release()
+
+        return contact_list
 
     def body_jacobian(self, body_id=None, joint_indices=None, recompute=True):
         """

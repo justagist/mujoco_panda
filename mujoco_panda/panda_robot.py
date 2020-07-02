@@ -77,7 +77,7 @@ class PandaArm(MujocoRobot):
         if self._smooth_ft:
 
             # change length of smoothing buffer if required
-            self._smooth_ft_buffer = deque(maxlen=50)
+            self._smooth_ft_buffer = deque(maxlen=10)
             self._smooth_ft_buffer.append(np.asarray([0,0,0,0,0,0]))
             self.add_pre_step_callable(
                 {'ft_smoother': [self._smoother_handle, [True]]})

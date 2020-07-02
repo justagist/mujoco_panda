@@ -16,7 +16,7 @@ class OSHybridForceMotionController(ControllerBase):
     
     """
 
-    def __init__(self, robot_object, config=BASIC_HYB_CONFIG, *args, **kwargs):
+    def __init__(self, robot_object, config=BASIC_HYB_CONFIG, control_rate=None, *args, **kwargs):
         """
         contstructor
 
@@ -26,7 +26,9 @@ class OSHybridForceMotionController(ControllerBase):
             BASIC_HYB_CONFIG (see config for reference)
         :type config: dict, optional
         """
-
+        if control_rate is not None:
+            config['control_rate'] = control_rate
+            
         super(OSHybridForceMotionController,
               self).__init__(robot_object, config)
 
@@ -117,7 +119,6 @@ class OSHybridForceMotionController(ControllerBase):
 
         # compute force control part along force dimensions # negative sign to convert from experienced to applied
         force_control = -self._force_dir.dot(self._kp_f.dot(delta_force) - np.abs(self._kd_f.dot(delta_vel)) + self._goal_force)
-
         # compute position control force along position dimensions (orthogonal to force dims)
         position_control = self._pos_p_dir.dot(
             self._kp_p.dot(delta_pos) + self._kd_p.dot(delta_vel))
