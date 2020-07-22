@@ -79,6 +79,7 @@ class OSHybridForceMotionController(ControllerBase):
         :type status: bool, optional
         """
         if status:
+            self._robot.forward_sim()
             self._goal_pos, self._goal_ori = self._robot.ee_pose()
             self._goal_vel, self._goal_omg = np.zeros(3), np.zeros(3)
             self._goal_force, self._goal_torque = np.zeros(
@@ -176,7 +177,7 @@ class OSHybridForceMotionController(ControllerBase):
         """
         change the target for the controller
         """
-        self._mutex.acquire()
+        # self._mutex.acquire()
         self._goal_pos = goal_pos
         self._goal_ori = goal_ori
         self._goal_vel = goal_vel
@@ -185,7 +186,7 @@ class OSHybridForceMotionController(ControllerBase):
             self._goal_force = - np.asarray(goal_force) # applied force = - experienced force
         if goal_torque is not None:
             self._goal_torque = - np.asarray(goal_torque) # applied torque = - experienced torque
-        self._mutex.release()
+        # self._mutex.release()
 
     def change_ft_dir(self, directions):
         """
@@ -198,7 +199,7 @@ class OSHybridForceMotionController(ControllerBase):
             orientation) controlled.
         :type directions: [int] * 6
         """
-        self._mutex.acquire()
+        # self._mutex.acquire()
         self._force_dir = np.diag(directions[:3])
 
         self._torque_dir = np.diag(directions[3:])
@@ -206,4 +207,4 @@ class OSHybridForceMotionController(ControllerBase):
         self._pos_p_dir = np.diag([1, 1, 1]) ^ self._force_dir
 
         self._pos_o_dir = np.diag([1, 1, 1]) ^ self._torque_dir
-        self._mutex.release()
+        # self._mutex.release()

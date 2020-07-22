@@ -7,7 +7,7 @@ import numpy as np
 import mujoco_py as mjp
 from threading import Lock
 
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "WARN"
 
 class ContactInfo(object):
     def __init__(self, pos, ori, ft):
@@ -217,7 +217,7 @@ class MujocoRobot(object):
         :return: list of ContactInfo objects
         :rtype: [ContactInfo]
         """
-        self._mutex.acquire()
+        # self._mutex.acquire()
         mjp.functions.mj_rnePostConstraint(
             self._sim.model, self._sim.data)
 
@@ -244,7 +244,7 @@ class MujocoRobot(object):
 
         assert nc == len(contact_list)
         
-        self._mutex.release()
+        # self._mutex.release()
 
         return contact_list
 

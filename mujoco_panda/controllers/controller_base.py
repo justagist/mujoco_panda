@@ -26,7 +26,7 @@ class ControllerBase(object):
         else:
             control_rate = 1./self._robot.model.opt.timestep
 
-
+        self._logger.info("Controller rate: {}".format(control_rate))
         self._is_active = False
 
         self._cmd = self._robot.sim.data.ctrl[self._robot.actuated_arm_joints].copy(
@@ -83,20 +83,35 @@ class ControllerBase(object):
         :param control_rate: rate of control loop, ideally same as simulation step rate.
         :type control_rate: float
         """
+
+        calls = 0
+        delay_time = 1./control_rate
+
+        start = time.perf_counter()
+        go_again_at = start + delay_time
         while self._is_running:
-            now_c = time.time()
+            # now_c = time.time()
             if self._is_active:
-                self._mutex.acquire()
+                # self._mutex.acquire()
                 self._compute_cmd()
                 self._robot.set_joint_commands(
                     self._cmd, joints=self._robot.actuated_arm_joints, compensate_dynamics=False)
+                calls+=1
                 self._robot.step(render=False)
-                self._mutex.release()
+                # print (self._robot.sim.data.time)
+                # self._mutex.release()
 
-            elapsed_c = time.time() - now_c
-            sleep_time_c = (1./control_rate) - elapsed_c
-            if sleep_time_c > 0.0:
-                time.sleep(sleep_time_c)
+            # elapsed_c = time.time() - now_c
+            # sleep_time_c = (1./control_rate) - elapsed_c
+            # # print(elapsed_c)
+            # if sleep_time_c > 0.0:
+            #     time.sleep(sleep_time_c)
+            sleep_time = go_again_at - time.perf_counter()
+            go_again_at += delay_time
+            if sleep_time < 0:
+                continue
+            time.sleep(sleep_time)
+        print ("Total calls: ",calls, calls*self._robot.model.opt.timestep)
 
     def stop_controller_cleanly(self):
         """

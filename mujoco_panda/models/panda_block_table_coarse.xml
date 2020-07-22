@@ -15,7 +15,7 @@
     <site rgba="1 0 0 .5"/>
   </default> 
 
-    <option cone="pyramidal" timestep="0.005" integrator="Euler">
+    <option cone="pyramidal" timestep="0.003" integrator="Euler">
         <flag gravity="disable"/>
     </option>
 
