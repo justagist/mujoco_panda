@@ -177,7 +177,7 @@ class MujocoRobot(object):
                 return False
         return True
 
-    def get_ft_reading(self, in_global_frame=True):
+    def get_ft_reading(self, in_global_frame=True, forward_sim=True):
         """
         Return sensordata values. Assumes no other sensor is present.
 
@@ -185,7 +185,7 @@ class MujocoRobot(object):
         :rtype: np.ndarray (3,), np.ndarray (3,)
         """
         if self._model.sensor_type[0] == 4 and self._model.sensor_type[1] == 5:
-            if not self._forwarded:
+            if not self._forwarded and forward_sim:
                 self.forward_sim()
             sensordata = -self._sim.data.sensordata.copy() # change sign to make force relative to parent body
             if in_global_frame:

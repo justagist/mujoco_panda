@@ -173,7 +173,7 @@ class PandaArm(MujocoRobot):
 
         return pos_actuator_ids, torque_actuator_ids
 
-    def get_ft_reading(self, *args, **kwargs):
+    def get_ft_reading(self, raw_values = False, *args, **kwargs):
         """
         Overriding the parent class method for FT smoothing. FT smoothing has to be
         enabled while initialising PandaArm instance.
@@ -181,7 +181,7 @@ class PandaArm(MujocoRobot):
         :return: force, torque
         :rtype: np.ndarray, np.ndarray
         """
-        if not self._smooth_ft:
+        if raw_values or not self._smooth_ft:
             return super(PandaArm, self).get_ft_reading(*args, **kwargs)
         else:
             vals = np.mean(np.asarray(self._smooth_ft_buffer).copy(), 0)
