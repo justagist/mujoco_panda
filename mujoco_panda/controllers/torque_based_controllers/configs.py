@@ -1,7 +1,7 @@
 import numpy as np
 
-KP_P = np.array([15000., 15000., 15000.])
-KP_O = np.array([7000., 7000., 7000.])
+KP_P = np.array([50000, 50000, 50000])
+KP_O = np.array([1000, 1000, 1000])
 BASIC_HYB_CONFIG = {
     'kp_p': KP_P,
     'kd_p': 2.*np.sqrt(KP_P),

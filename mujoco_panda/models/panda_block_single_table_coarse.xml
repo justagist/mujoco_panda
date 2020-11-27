@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<mujoco model="mujoco_panda_model">
+
+    <include file="other/simple_scene.xml"/>
+    <include file="panda/assets.xml"/>
+    <compiler meshdir=""/>
+
+    <default>  
+    <default class="block_visual">
+      <geom contype="0" conaffinity="0"/>
+    </default>
+    <default class="block_collision">
+      <geom contype="1" conaffinity="1" condim="4" solimp="0.99 0.99 0.01" solref="0.01 1"/>
+    </default>
+    <site rgba="1 0 0 .5"/>
+  </default> 
+
+    <option cone="pyramidal" timestep="0.002" integrator="Euler">
+        <flag gravity="disable"/>
+    </option>
+
+    <worldbody>
+        <include file="panda/arm_with_block.xml"/>
+        <body name="table1" pos="0.4 -0.0 0.4">
+            <geom name="table1_geom" class="block_collision" size=".3 0.6 0.01" rgba="0.96 0.85 0.76 1" friction="0.2 0.005 0.0001" mass="20" type="box"/>
+        </body>
+    </worldbody>
+
+    <actuator>
+        <include file="panda/actuators/torque.xml"/>
+    </actuator>
+
+    <sensor>
+        <include file="panda/sensors/ft_sensor.xml" />
+    </sensor>
+
+</mujoco>

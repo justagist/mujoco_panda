@@ -258,7 +258,7 @@ class PandaArm(MujocoRobot):
         if len(pos_ids) > 0:
             self.set_joint_positions(cmd[pos_ids], pos_ids, *args, **kwargs)
 
-    def set_joint_torques(self, cmd, joint_ids=None, compensate_dynamics=False):
+    def set_joint_torques(self, cmd, joint_ids=None, compensate_dynamics=True):
         """
         Set joint torques for direct torque control. Use for torque controlling.
         Works for joints whose actuators are of type 'motor'.
