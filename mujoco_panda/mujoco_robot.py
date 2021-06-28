@@ -17,7 +17,7 @@ class ContactInfo(object):
         self.ft = ft.copy()
     
     def __str__(self):
-        return "pos: {}, quat: {}, ft: {}".format(pos,quat,ft)
+        return "pos: {}, quat: {}, ft: {}".format(self.pos, self.quat, self.ft)
 
 class MujocoRobot(object):
     """
