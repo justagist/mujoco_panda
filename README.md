@@ -20,11 +20,11 @@ To use all functionalities of the provided library, the following dependencies h
 
 ## Setup Instructions
 
-Once mujoco_py is correctly installed, this library can be used by sourcing the `set_env.sh` file.
+Once mujoco_py is correctly installed, this library can be installed by running:
 
-```bash
-source set_env.sh
-```
+`python setup.py install`
+
+
 
 ## Usage
 
