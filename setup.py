@@ -18,6 +18,6 @@ setup(name='mujoco_panda',
       author_email='sxs1412@bham.ac.uk',
       url='https://github.com/09ubberboy90/mujoco_panda',
       packages=['mujoco_panda', "mujoco_panda.utils", "mujoco_panda.controllers.torque_based_controllers", "mujoco_panda.controllers"],
-      install_requires=['numpy', 'scipy', 'numpy-quaternion', 'free-mujoco-py'],
+      install_requires=['numpy', 'scipy', 'numpy-quaternion', 'mujoco-py @ git+https://github.com/openai/mujoco-py'],
       package_data={'mujoco_panda': matches}
       )
