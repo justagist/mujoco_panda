@@ -1,5 +1,14 @@
 # Mujoco Panda
 
+> [!WARNING]
+> **Archived -- superseded by [`mujoco_robot`](https://github.com/justagist/mujoco_robot).**
+>
+> This repo targets the deprecated [`mujoco_py`](https://github.com/openai/mujoco-py) bindings and is Panda-specific. It is no longer maintained.
+>
+> The successor, **[`mujoco_robot`](https://github.com/justagist/mujoco_robot)**, is a ground-up rewrite on the official [`mujoco`](https://github.com/google-deepmind/mujoco) bindings: generic (any robot via `robot_descriptions`), with a cleaner state/control API, Jacobian/`mink`-based IK, native FT sensors, rich contact info, and step hooks. It's a MuJoCo counterpart to [`pybullet_robot`](https://github.com/justagist/pybullet_robot).
+>
+> Use `mujoco_robot` for new work. This repo stays up for reference only.
+
 - Franka Emika Panda Robot model definitions for Mujoco.
 - MuJoCo-based robot simulator.
 - Python 3 API for controlling and monitoring the simulated Franka Emika Panda Robot.
