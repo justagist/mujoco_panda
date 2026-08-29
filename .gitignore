@@ -1,5 +1,7 @@
 *.py[cod]
-
+*.egg-info
+build
+dist
 __pycache__
 
 oldmodels/

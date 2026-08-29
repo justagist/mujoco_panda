@@ -5,8 +5,9 @@ from collections import deque
 from .mujoco_robot import MujocoRobot
 from .gravity_robot import GravityRobot
 
-MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
-    '/mujoco_panda/models/franka_panda.xml'
+import pkg_resources
+
+MODEL_PATH = pkg_resources.resource_filename('mujoco_panda', 'models/franka_panda.xml')
 
 DEFAULT_CONFIG = {
     'ft_site_name': 'ee_site',
@@ -355,8 +356,8 @@ class PandaArm(MujocoRobot):
         Create an instance of this class using the model of the full
         robot (arm + gripper) and torque actuators at arm joints.
         """
-        model_path = os.environ['MJ_PANDA_PATH'] + \
-            '/mujoco_panda/models/franka_panda.xml'
+        model_path = pkg_resources.resource_filename('mujoco_panda', 'models/franka_panda.xml')
+
         return cls(model_path=model_path, **kwargs)
 
     @classmethod
@@ -365,8 +366,8 @@ class PandaArm(MujocoRobot):
         Create an instance of this class using the model of the full
         robot (arm + gripper) and position actuators at arm joints.
         """
-        model_path = os.environ['MJ_PANDA_PATH'] + \
-            '/mujoco_panda/models/franka_panda_pos.xml'
+        model_path = pkg_resources.resource_filename('mujoco_panda', 'models/franka_panda_pos.xml')
+
         return cls(model_path=model_path, **kwargs)
 
     @classmethod
@@ -375,8 +376,8 @@ class PandaArm(MujocoRobot):
         Create an instance of this class using the model of the
         robot arm without gripper, and torque actuators at arm joints.
         """
-        model_path = os.environ['MJ_PANDA_PATH'] + \
-            '/mujoco_panda/models/franka_panda_no_gripper.xml'
+        model_path = pkg_resources.resource_filename('mujoco_panda', 'models/franka_panda_no_gripper.xml')
+
         return cls(model_path=model_path, **kwargs)
 
     @classmethod
@@ -385,6 +386,6 @@ class PandaArm(MujocoRobot):
         Create an instance of this class using the model of the
         robot arm without gripper, and position actuators at arm joints.
         """
-        model_path = os.environ['MJ_PANDA_PATH'] + \
-            '/mujoco_panda/models/franka_panda_pos_no_gripper.xml'
+        model_path = pkg_resources.resource_filename('mujoco_panda', 'models/franka_panda_pos_no_gripper.xml')
+
         return cls(model_path=model_path, **kwargs)

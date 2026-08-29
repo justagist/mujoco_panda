@@ -6,7 +6,7 @@ from mujoco_panda import PandaArm
 from mujoco_panda.utils.viewer_utils import render_frame
 from mujoco_panda.utils.debug_utils import ParallelPythonCmd
 from mujoco_panda.controllers.torque_based_controllers import OSHybridForceMotionController
-
+import pkg_resources
 
 def exec_func(cmd):
     if cmd == '':
@@ -17,8 +17,7 @@ def exec_func(cmd):
     if a is not None:
         return str(a)
 
-MODEL_PATH = os.environ['MJ_PANDA_PATH'] + \
-    '/mujoco_panda/models/'
+MODEL_PATH = pkg_resources.resource_filename('mujoco_panda', 'models')
 
 
 # controller parameters
@@ -46,7 +45,7 @@ ctrl_config = {
 }
 
 if __name__ == "__main__":
-    p = PandaArm(model_path=MODEL_PATH+'panda_block_table.xml',
+    p = PandaArm(model_path=MODEL_PATH+'/panda_block_table.xml',
                  render=True, compensate_gravity=False, smooth_ft_sensor=True)
 
     if mujoco_py.functions.mj_isPyramidal(p.model):
